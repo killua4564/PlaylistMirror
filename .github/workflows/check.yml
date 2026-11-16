@@ -1,0 +1,50 @@
+# 自動檢查：每次 push 到 main、或有人開 Pull Request 時，GitHub 會在雲端電腦上
+# 1. 建置 App（確認程式能編譯）
+# 2. 跑全部單元測試
+# 任一步失敗，GitHub 會寄信通知，並在 commit 旁邊顯示紅色叉叉。
+#
+# 刻意不做的事：不產出可下載的 APK。
+# 儲存庫是公開的，放在這裡的 APK 任何人都下載得到；而且這裡沒有 BeatSaver 憑證
+# （secrets.properties 不在 Git 裡），建出來的 App 也不能登入。要安裝請在自己電腦上建置。
+name: 檢查
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# 同一個分支連續 push 時，取消還在跑的舊檢查，只看最新的
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # 只需要讀程式碼
+
+jobs:
+  check:
+    runs-on: ubuntu-latest # GitHub 提供的雲端電腦，已裝好 Android SDK
+    timeout-minutes: 30
+    steps:
+      - name: 下載程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: 準備 Gradle（並記住下載過的工具，下次比較快）
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 建置 App 並跑單元測試
+        run: ./gradlew assembleDebug testDebugUnitTest
+
+      - name: 測試失敗時，保存測試報告方便查原因
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: app/build/reports/tests/
+          retention-days: 7

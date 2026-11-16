@@ -22,6 +22,7 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@17
 - Android SDK 路徑寫在 `local.properties`（每台電腦不同，不進 Git）。
 - 單元測試名稱以測項編號開頭（例如 `T1-05`），對應規格書的測項分頁；新增或修改測試時同步更新測項分頁的狀態與備註。
 - `tools/make_sample_data.py` 產生假的遊戲資料，用於在手機上手動測試。
+- GitHub Actions（`.github/workflows/check.yml`）在 push 與 PR 時建置並跑單元測試，**不產出 APK**：儲存庫公開，APK 內含的 Client Secret 可被拆出，所以可登入的 APK 只在本機建置、不分享。
 
 ## 機密與個人資料（儲存庫是公開的）
 
