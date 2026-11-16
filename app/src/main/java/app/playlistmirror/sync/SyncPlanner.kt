@@ -46,8 +46,13 @@ object SyncPlanner {
             if (!cloud.containsKey(id)) continue // 這次沒查到，略過
             val cloudPlaylist = cloud[id]
             if (cloudPlaylist == null) {
-                // BeatSaver 上已刪除：保留 Quest 歌單，只解除對應
-                items += SyncItem(SyncKind.UnlinkQuestPlaylist, id, playlist.title)
+                // BeatSaver 上已刪除 → Quest 上也刪除這個歌單（鏡像）。
+                // 方向可以確定：歌單只在 BeatSaver 網站建立或刪除，遊戲和 App 都不能刪歌單。
+                // 但如果沒有上次同步的記錄（例如歌單檔裡是舊的、已失效的 ID），標為「請你決定」。
+                items += SyncItem(
+                    SyncKind.DeleteQuestPlaylist, id, playlist.title,
+                    needsDecision = record.playlists[id] == null,
+                )
             } else {
                 items += diffPlaylist(playlist, cloudPlaylist, record.playlists[id], lookup)
             }

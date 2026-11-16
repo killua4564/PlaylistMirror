@@ -25,7 +25,7 @@ data class ItemResult(val item: SyncItem, val status: Status, val message: Strin
 /**
  * 同步的「手」：照摘要裡勾選的項目，真的去改 Quest 上的檔案。
  *
- * 執行順序：先建立歌單 → 解除對應 → 移出 → 加入 → 下載 → 更新。
+ * 執行順序：先建立歌單 → 刪除歌單 → 移出 → 加入 → 下載 → 更新。
  * 每個項目各自成功或失敗，一個失敗不會讓其他項目停下來；失敗的項目下次同步會再出現。
  *
  * @param installed 執行前 Quest 上已安裝的歌（更新時用來找舊版資料夾）
@@ -55,7 +55,7 @@ class SyncExecutor(
     }
 
     private val order = listOf(
-        SyncKind.CreateQuestPlaylist, SyncKind.UnlinkQuestPlaylist, SyncKind.RemoveFromQuestPlaylist,
+        SyncKind.CreateQuestPlaylist, SyncKind.DeleteQuestPlaylist, SyncKind.RemoveFromQuestPlaylist,
         SyncKind.AddToQuestPlaylist, SyncKind.Download, SyncKind.Update,
         SyncKind.AddToBeatSaver, SyncKind.RemoveFromBeatSaver,
     )
@@ -66,13 +66,9 @@ class SyncExecutor(
                 val playlist = cloud[item.playlistId] ?: throw IOException("找不到 BeatSaver 歌單內容")
                 store.createFromRaw(playlist.title, ensureSyncUrl(playlist))
             }
-            SyncKind.UnlinkQuestPlaylist -> {
-                val playlist = playlistFor(item.playlistId)
-                val customData = (playlist.raw["customData"] as? JsonObject)?.filterKeys { it != "syncURL" }
-                val raw = JsonObject(playlist.raw.toMutableMap().apply {
-                    if (customData.isNullOrEmpty()) remove("customData") else put("customData", JsonObject(customData))
-                })
-                store.saveRaw(playlist, raw)
+            SyncKind.DeleteQuestPlaylist -> {
+                // 只刪歌單檔；歌單裡的歌不刪，因為其他歌單可能也有這些歌
+                store.delete(playlistFor(item.playlistId))
             }
             SyncKind.RemoveFromQuestPlaylist -> {
                 val playlist = playlistFor(item.playlistId)
@@ -229,7 +225,7 @@ class SyncExecutor(
                 SyncKind.RemoveFromQuestPlaylist -> "把「$song」移出歌單"
                 SyncKind.Update -> "更新「$song」到新版"
                 SyncKind.CreateQuestPlaylist -> "建立歌單「${item.playlistTitle}」"
-                SyncKind.UnlinkQuestPlaylist -> "「${item.playlistTitle}」已在 BeatSaver 刪除，保留並解除對應"
+                SyncKind.DeleteQuestPlaylist -> "刪除歌單「${item.playlistTitle}」（BeatSaver 上已刪除；歌曲檔案保留）"
                 SyncKind.AddToBeatSaver -> "把「$song」加到 BeatSaver"
                 SyncKind.RemoveFromBeatSaver -> "把「$song」從 BeatSaver 移除"
             }

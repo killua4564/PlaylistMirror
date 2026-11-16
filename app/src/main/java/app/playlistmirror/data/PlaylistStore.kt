@@ -90,10 +90,9 @@ class PlaylistStore(private val folder: File) {
         return parse(file)
     }
 
-    /** 整份替換歌單檔內容（同步時「解除對應」用：拿掉 syncURL，其他保留）。 */
-    fun saveRaw(playlist: Playlist, raw: JsonObject): Playlist {
-        writeSafely(playlist.file, json.encodeToString(JsonElement.serializer(), raw))
-        return parse(playlist.file)
+    /** 刪除歌單檔（同步時，BeatSaver 上已刪除的歌單用）。只刪歌單，不動歌曲。 */
+    fun delete(playlist: Playlist) {
+        if (playlist.file.exists() && !playlist.file.delete()) throw java.io.IOException("無法刪除歌單檔")
     }
 
     /** 把一首已安裝的歌，做成一筆可以放進歌單的紀錄。 */

@@ -80,6 +80,15 @@ class PlaylistStoreTest {
     }
 
     @Test
+    fun `T2-13 刪除歌單只刪歌單檔，其他歌單照常`() {
+        val gone = game.addPlaylist("gone.bplist", "Gone", listOf("aaa" to "Song"))
+        game.addPlaylist("keep.bplist", "Keep", listOf("aaa" to "Song"))
+        store.delete(store.parse(gone))
+        assertTrue(!gone.exists())
+        assertEquals(listOf("Keep"), store.loadAll().first.map { it.title })
+    }
+
+    @Test
     fun `T1-20 寫檔失敗時，原本的歌單檔完整保留`() {
         val file = game.addPlaylist("a.bplist", "A", listOf("aaa" to "Song"))
         val before = file.readText()
@@ -109,11 +118,14 @@ class PlaylistStoreTest {
     }
 
     @Test
-    fun `T1-24 讀出歌單封面的圖片文字，去掉 data 開頭；沒有封面就是 null`() {
+    fun `T1-24 讀出歌單封面（image 或 imageString），去掉 data 開頭；沒有封面就是 null`() {
         File(game.playlistsDir, "plain.bplist").writeText("""{"playlistTitle":"P","image":"/9j/AAAA","songs":[]}""")
         assertEquals("/9j/AAAA", store.parse(File(game.playlistsDir, "plain.bplist")).imageBase64)
         File(game.playlistsDir, "uri.bplist").writeText("""{"playlistTitle":"U","image":"data:image/png;base64,iVBOR","songs":[]}""")
         assertEquals("iVBOR", store.parse(File(game.playlistsDir, "uri.bplist")).imageBase64)
+        // .json 歌單用 imageString 存封面
+        File(game.playlistsDir, "qsm.json").writeText("""{"playlistTitle":"Q","imageString":"iVBORw0K","songs":[]}""")
+        assertEquals("iVBORw0K", store.parse(File(game.playlistsDir, "qsm.json")).imageBase64)
         File(game.playlistsDir, "none.bplist").writeText("""{"playlistTitle":"N","songs":[]}""")
         assertNull(store.parse(File(game.playlistsDir, "none.bplist")).imageBase64)
     }

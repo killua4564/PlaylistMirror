@@ -62,8 +62,8 @@ enum class SyncKind(val side: Side) {
     /** BeatSaver 上新建的歌單：在 Quest 建立歌單檔 */
     CreateQuestPlaylist(Side.Quest),
 
-    /** BeatSaver 上刪掉的歌單：保留 Quest 上的歌單，但解除對應（移除 syncURL） */
-    UnlinkQuestPlaylist(Side.Quest),
+    /** BeatSaver 上刪掉的歌單：Quest 上也刪除這個歌單檔（歌曲檔案保留，其他歌單可能還用得到） */
+    DeleteQuestPlaylist(Side.Quest),
 
     /** 你在 Quest 新加的歌：加到 BeatSaver 歌單 */
     AddToBeatSaver(Side.BeatSaver),

@@ -203,13 +203,27 @@ class SyncPlannerTest {
     }
 
     @Test
-    fun `T2-13 BeatSaver 上刪掉的歌單：保留 Quest 歌單並解除對應`() {
+    fun `T2-13 BeatSaver 上刪掉的歌單：Quest 上也刪除，不刪歌曲、不從 BeatSaver 移除`() {
         val items = plan(
             local = listOf(questPlaylist(entry("a", "h-a"))),
             cloud = mapOf(pid to null),
             installed = listOf(song("a")),
+            record = record(Triple("a", "h-a", true)),
         )
-        assertEquals(listOf(SyncKind.UnlinkQuestPlaylist to null), items.kinds())
+        assertEquals(listOf(SyncKind.DeleteQuestPlaylist to null), items.kinds())
+        assertEquals(false, items.single().needsDecision)
+    }
+
+    @Test
+    fun `T2-13 沒有同步記錄的歌單被判定已刪除：一樣列為刪除，但標「請你決定」`() {
+        val items = plan(
+            local = listOf(questPlaylist(entry("a", "h-a"))),
+            cloud = mapOf(pid to null),
+            installed = listOf(song("a")),
+            record = SyncRecord(),
+        )
+        assertEquals(listOf(SyncKind.DeleteQuestPlaylist to null), items.kinds())
+        assertEquals(true, items.single().needsDecision)
     }
 
     @Test

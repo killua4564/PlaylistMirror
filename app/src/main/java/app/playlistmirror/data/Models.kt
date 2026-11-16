@@ -79,10 +79,13 @@ data class Playlist(
     val cloudId: String? = PlaylistLink.idFromSyncUrl((raw["customData"] as? JsonObject)?.str("syncURL"))
 
     /**
-     * 歌單封面：歌單檔的 image 欄位，是把圖片轉成文字（Base64）存起來的。
+     * 歌單封面：把圖片轉成文字（Base64）存在歌單檔裡。
+     * 欄位名稱有兩種：.bplist 檔用 image，.json 檔（例如 Quest Song Manager 建的）用 imageString，
+     * Beat Saber 兩種都認得，所以這裡也兩種都讀。
      * 有些檔案會在前面加「data:image/png;base64,」，這裡把它去掉，只留圖片內容。
      */
-    val imageBase64: String? = raw.str("image")?.substringAfter("base64,")?.takeIf { it.isNotBlank() }
+    val imageBase64: String? = listOf("image", "imageString")
+        .firstNotNullOfOrNull { field -> raw.str(field)?.substringAfter("base64,")?.takeIf { it.isNotBlank() } }
 }
 
 /** 讀取失敗的檔案，以及失敗原因。畫面上會提示，讓使用者知道有東西沒讀到。 */
