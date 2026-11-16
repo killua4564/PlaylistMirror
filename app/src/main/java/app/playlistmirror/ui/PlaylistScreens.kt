@@ -33,7 +33,7 @@ import app.playlistmirror.data.PlaylistEntry
  * App 不提供新增、刪除歌單：App 沒有權限在 BeatSaver 建立或刪除歌單，
  * 在 Quest 上單獨新增或刪除的歌單無法同步，所以歌單一律在 BeatSaver 網站建立或刪除，
  * App 只負責把它們鏡像到 Quest。
- * 「尚未連結」的提示要等階段 2（同步）才會出現，因為那時才有連結的概念。
+ * 歌單和 BeatSaver 的對應直接看歌單檔裡的 syncURL，沒有「手動連結」這回事，所以這裡不顯示連結狀態。
  */
 @Composable
 fun PlaylistListScreen(

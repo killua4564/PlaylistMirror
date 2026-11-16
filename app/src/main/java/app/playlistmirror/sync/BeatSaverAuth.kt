@@ -34,7 +34,6 @@ class BeatSaverAuth(
     data class DeviceCode(
         val userCode: String,
         val verificationUrl: String,
-        val verificationUrlComplete: String?,
         val deviceCode: String,
         val intervalSeconds: Int,
         val expiresInSeconds: Int,
@@ -145,7 +144,6 @@ class BeatSaverAuth(
                 userCode = o.str("user_code") ?: throw IOException("回應缺少登入代碼"),
                 // BeatSaver 用 verification_url；標準寫法是 verification_uri，兩種都接受
                 verificationUrl = o.str("verification_url") ?: o.str("verification_uri") ?: "https://beatsaver.com/quest",
-                verificationUrlComplete = o.str("verification_url_complete") ?: o.str("verification_uri_complete"),
                 deviceCode = o.str("device_code") ?: throw IOException("回應缺少裝置代碼"),
                 intervalSeconds = (o["interval"] as? JsonPrimitive)?.intOrNull ?: 5,
                 expiresInSeconds = (o["expires_in"] as? JsonPrimitive)?.intOrNull ?: 1800,

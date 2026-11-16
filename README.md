@@ -43,8 +43,6 @@ App 讀寫的是 Beat Saber（含模組）在 Quest 上的資料夾：
 
 產生的 App 在 `app/build/outputs/apk/debug/app-debug.apk`。
 
-`tools/make_sample_data.py` 可以產生一份假的歌曲與歌單資料，方便在沒有 Quest 的手機上測試。
-
 ## 測試
 
 ```bash

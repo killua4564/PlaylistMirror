@@ -1,7 +1,6 @@
 package app.playlistmirror.data
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -108,9 +107,6 @@ class PlaylistStoreTest {
         assertEquals(setOf("hash", "songName"), entry.raw.keys)
         assertEquals(JsonPrimitive("ccc"), entry.raw["hash"])
     }
-
-    @Suppress("unused")
-    private fun JsonObject.str(key: String) = this[key]?.jsonPrimitive?.content
 
     @Test
     fun `T1-24 讀出歌單封面的圖片文字，去掉 data 開頭；沒有封面就是 null`() {
