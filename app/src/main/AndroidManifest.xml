@@ -3,6 +3,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 連網：讀取 BeatSaver 歌單、下載歌曲 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Android 10 用的舊式檔案權限 -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"

@@ -9,13 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -27,40 +22,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.playlistmirror.BuildConfig
 import app.playlistmirror.data.LibraryState
-
-/**
- * 同步分頁（佔位）。真正的同步在階段 2、3 製作，需要 BeatSaver 的授權。
- * 先放一顆停用的按鈕，讓版面跟規格一致。
- */
-@Composable
-fun SyncScreen(onOpenSettings: () -> Unit) {
-    ScreenScaffold(
-        title = "同步",
-        actions = {
-            IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Settings, contentDescription = "設定") }
-        },
-    ) { padding ->
-        Column(
-            Modifier.padding(padding).fillMaxSize().padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text("上次同步：尚未同步", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(16.dp))
-            Button(onClick = {}, enabled = false) {
-                Icon(Icons.Default.Sync, contentDescription = null)
-                Text("  同步全部歌單")
-            }
-            Spacer(Modifier.height(16.dp))
-            Text(
-                "同步功能還在製作中，需要先取得 BeatSaver 的授權。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
 
 /** 設定頁：遊戲資料夾位置、檔案權限、重新載入。 */
 @Composable

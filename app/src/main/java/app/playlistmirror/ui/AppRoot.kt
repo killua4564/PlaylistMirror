@@ -83,6 +83,7 @@ fun AppRoot(viewModel: LibraryViewModel) {
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val syncState by viewModel.sync.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(message) {
         message?.let {
@@ -138,7 +139,15 @@ fun AppRoot(viewModel: LibraryViewModel) {
                 )
             }
             composable(Tab.Sync.route) {
-                SyncScreen(onOpenSettings = openSettings)
+                SyncScreen(
+                    state = syncState,
+                    // 階段 3 拿到 BeatSaver 授權、登入後才會變成 true
+                    canWriteBeatSaver = false,
+                    onStart = viewModel::startSync,
+                    onConfirm = viewModel::confirmSync,
+                    onCancel = viewModel::cancelSync,
+                    onOpenSettings = openSettings,
+                )
             }
             composable("song/{hash}") { entry ->
                 SongDetailScreen(
