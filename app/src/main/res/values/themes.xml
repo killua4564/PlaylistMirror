@@ -1,0 +1,6 @@
+<resources>
+    <!-- 啟動瞬間的底色設成深色，避免閃一下白畫面；之後由 Compose 畫面接手 -->
+    <style name="Theme.PlaylistMirror" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0C0E1A</item>
+    </style>
+</resources>

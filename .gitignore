@@ -1,0 +1,29 @@
+# 這些是電腦自動產生、或每台電腦不同的檔案，不放進 Git
+
+# Gradle 與 Kotlin 的暫存
+.gradle/
+.kotlin/
+build/
+
+# 每台電腦不同的 SDK 路徑
+local.properties
+
+# 編輯器設定
+.idea/
+*.iml
+.vscode/
+
+# macOS 系統檔
+.DS_Store
+
+# Android Studio 截圖
+captures/
+
+# 機密資料：BeatSaver 的 Client ID / Secret 會放在這裡，絕對不能上傳
+secrets.properties
+
+# 打包好的 App 與簽章金鑰
+*.apk
+*.aab
+*.jks
+*.keystore
