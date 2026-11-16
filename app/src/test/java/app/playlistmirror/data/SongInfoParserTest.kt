@@ -31,8 +31,7 @@ class SongInfoParserTest {
         assertEquals(listOf(Difficulty.Easy, Difficulty.Expert), info.difficulties)
         // 指紋檔案保持說明書裡的順序，不能重新排序
         assertEquals(listOf("ExpertStandard.dat", "EasyStandard.dat", "ExpertOneSaber.dat"), info.filesToHash)
-        assertEquals("song.egg", info.audioFileName)
-        // 舊格式沒有寫時間長度
+        // T1-03 舊格式沒有寫時間長度，不另外量音樂檔
         assertNull(info.durationSeconds)
     }
 

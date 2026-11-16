@@ -114,8 +114,8 @@ class LibraryRepository(
             duration = cached.durationSeconds
         } else {
             hash = SongHasher.hash(folder, infoFile, info.filesToHash)
+            // 時間長度只用說明書裡寫的（新格式才有）；舊格式不量音樂檔，畫面顯示「—」
             duration = info.durationSeconds
-                ?: info.audioFileName?.let { AudioDuration.readSeconds(File(folder, it)) }
             cache.put(path, SongCache.Entry(stamp, hash, duration))
         }
 

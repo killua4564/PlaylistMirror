@@ -30,11 +30,6 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    testOptions {
-        // 單元測試在電腦上跑，沒有真的 Android 系統；
-        // 遇到 Android 內建功能（例如量音樂長度）時回傳空值，而不是讓測試失敗
-        unitTests.isReturnDefaultValues = true
-    }
     buildFeatures {
         compose = true
         // 讓程式可以讀到版本號（設定頁會顯示）

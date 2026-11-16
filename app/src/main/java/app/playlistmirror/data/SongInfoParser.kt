@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
  * 從 Info.dat 讀出來的歌曲資料。
  *
  * @property filesToHash 計算歌曲指紋時，除了 Info.dat 以外還要依序算進去的檔案
- * @property audioFileName 音樂檔名稱，舊格式歌曲要靠它量出時間長度
+ * @property durationSeconds 時間長度（秒），只有新格式的說明書有寫；舊格式是 null
  */
 data class ParsedInfo(
     val title: String,
@@ -21,7 +21,6 @@ data class ParsedInfo(
     val mapper: String?,
     val difficulties: List<Difficulty>,
     val filesToHash: List<String>,
-    val audioFileName: String?,
     val durationSeconds: Int?,
 )
 
@@ -57,8 +56,7 @@ object SongInfoParser {
             difficulties = beatmaps.mapNotNull { Difficulty.parse(it.str("_difficulty")) }.distinct().sorted(),
             // 舊格式的指紋 = Info.dat + 每個難度的譜面檔，依說明書裡的順序
             filesToHash = beatmaps.mapNotNull { it.str("_beatmapFilename") },
-            audioFileName = root.str("_songFilename"),
-            // 舊格式說明書裡沒有時間長度，之後要量音樂檔
+            // 舊格式說明書裡沒有時間長度，畫面顯示「—」
             durationSeconds = null,
         )
     }
@@ -93,7 +91,6 @@ object SongInfoParser {
             mapper = mappers.joinToString(", ").blankToNull(),
             difficulties = beatmaps.mapNotNull { Difficulty.parse(it.str("difficulty")) }.distinct().sorted(),
             filesToHash = files,
-            audioFileName = audio?.str("songFilename"),
             durationSeconds = (audio?.get("songDuration") as? JsonPrimitive)?.doubleOrNull?.roundToInt(),
         )
     }
