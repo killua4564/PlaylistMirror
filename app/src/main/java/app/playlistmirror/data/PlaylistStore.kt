@@ -40,7 +40,12 @@ class PlaylistStore(private val folder: File) {
         val raw = Json.parseToJsonElement(file.readText()).jsonObject
         val entries = raw.arr("songs").mapNotNull { element ->
             val o = element as? JsonObject ?: return@mapNotNull null
-            PlaylistEntry(hash = o.str("hash")?.lowercase(), songName = o.str("songName"), raw = o)
+            PlaylistEntry(
+                hash = o.str("hash")?.lowercase(),
+                songName = o.str("songName"),
+                raw = o,
+                key = o.str("key").blankToNull()?.lowercase(),
+            )
         }
         val title = raw.str("playlistTitle").blankToNull() ?: file.nameWithoutExtension
         return Playlist(file, title, entries, raw)
@@ -68,6 +73,29 @@ class PlaylistStore(private val folder: File) {
         return playlist.copy(entries = newEntries, raw = newRaw)
     }
 
+    /**
+     * 用 BeatSaver 下載的歌單內容，在 Quest 建立一個新的歌單檔（同步時「BeatSaver 上新建的歌單」用）。
+     * 檔名用歌單名稱，遇到同名就加上編號。內容原封不動寫入，包含封面和 syncURL。
+     */
+    fun createFromRaw(title: String, raw: JsonObject): Playlist {
+        folder.mkdirs()
+        val base = title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim().ifEmpty { "playlist" }
+        var file = File(folder, "$base.bplist")
+        var n = 2
+        while (file.exists()) {
+            file = File(folder, "$base ($n).bplist")
+            n++
+        }
+        writeSafely(file, json.encodeToString(JsonElement.serializer(), raw))
+        return parse(file)
+    }
+
+    /** 整份替換歌單檔內容（同步時「解除對應」用：拿掉 syncURL，其他保留）。 */
+    fun saveRaw(playlist: Playlist, raw: JsonObject): Playlist {
+        writeSafely(playlist.file, json.encodeToString(JsonElement.serializer(), raw))
+        return parse(playlist.file)
+    }
+
     /** 把一首已安裝的歌，做成一筆可以放進歌單的紀錄。 */
     fun newEntry(song: Song): PlaylistEntry {
         val raw = buildJsonObject {
@@ -75,7 +103,7 @@ class PlaylistStore(private val folder: File) {
             put("hash", song.hash)
             put("songName", song.title)
         }
-        return PlaylistEntry(song.hash, song.title, raw)
+        return PlaylistEntry(song.hash, song.title, raw, song.key)
     }
 
     /**

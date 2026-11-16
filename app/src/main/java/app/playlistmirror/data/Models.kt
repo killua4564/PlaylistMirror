@@ -56,6 +56,8 @@ data class PlaylistEntry(
     val hash: String?,
     val songName: String?,
     val raw: JsonObject,
+    /** BeatSaver 短 ID（已轉小寫）。歌曲更新後指紋會變、短 ID 不變，同步比對靠它認出同一首歌。 */
+    val key: String? = null,
 )
 
 /**
@@ -70,6 +72,9 @@ data class Playlist(
 ) {
     /** 這個歌單包含的所有歌曲指紋，用來快速判斷「某首歌在不在這個歌單裡」。 */
     val hashes: Set<String> = entries.mapNotNull { it.hash }.toSet()
+
+    /** 對應的 BeatSaver 歌單 ID，從 customData.syncURL 取得；沒有就是 null（不參與同步）。 */
+    val cloudId: String? = PlaylistLink.idFromSyncUrl((raw["customData"] as? JsonObject)?.str("syncURL"))
 }
 
 /** 讀取失敗的檔案，以及失敗原因。畫面上會提示，讓使用者知道有東西沒讀到。 */
