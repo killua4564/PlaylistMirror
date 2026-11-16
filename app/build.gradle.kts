@@ -30,6 +30,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    testOptions {
+        // 單元測試在電腦上跑，沒有真的 Android 系統；
+        // 遇到 Android 內建功能（例如量音樂長度）時回傳空值，而不是讓測試失敗
+        unitTests.isReturnDefaultValues = true
+    }
     buildFeatures {
         compose = true
         // 讓程式可以讀到版本號（設定頁會顯示）
@@ -57,4 +62,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     // 在背景做慢的事情（讀檔、算指紋），不讓畫面卡住
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    // 單元測試工具
+    testImplementation("junit:junit:4.13.2")
 }

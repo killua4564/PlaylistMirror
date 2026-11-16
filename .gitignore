@@ -22,6 +22,9 @@ captures/
 # 機密資料：BeatSaver 的 Client ID / Secret 會放在這裡，絕對不能上傳
 secrets.properties
 
+# 只在自己電腦上用的真實測試資料（有著作權的歌曲、個人收藏），不能公開
+testdata-local/
+
 # 打包好的 App 與簽章金鑰
 *.apk
 *.aab

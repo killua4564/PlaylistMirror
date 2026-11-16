@@ -44,6 +44,16 @@ App 讀寫的是 Beat Saber（含模組）在 Quest 上的資料夾：
 
 `tools/make_sample_data.py` 可以產生一份假的歌曲與歌單資料，方便在沒有 Quest 的手機上測試。
 
+## 測試
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+單元測試在電腦上執行，用測試自己產生的假遊戲資料夾，每個測試名稱以測項編號開頭（例如 `T1-05`），對應規格書的測項清單。
+
+`RealDataTest` 會用從 Quest 拉出來的真實歌曲與歌單驗證（例如指紋是否和 BeatSaver 一致）。真實資料有著作權也含個人收藏，所以不放進儲存庫；設定檔 `testdata-local/real-data.json` 已被 `.gitignore` 排除。沒有這個檔案時，這些測試會自動略過。
+
 ## 授權
 
 [MIT](LICENSE)
