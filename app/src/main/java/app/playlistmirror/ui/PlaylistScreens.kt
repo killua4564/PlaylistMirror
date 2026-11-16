@@ -74,6 +74,7 @@ fun PlaylistListScreen(
                     items(playlists, key = { it.file.absolutePath }) { playlist ->
                         ListItem(
                             modifier = Modifier.clickable { onOpenPlaylist(playlist) },
+                            leadingContent = { PlaylistCover(playlist) },
                             headlineContent = { Text(playlist.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             supportingContent = {
                                 Text("${playlist.entries.size} 首歌", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -121,6 +122,8 @@ fun PlaylistDetailScreen(
                 items(rows) { (entry, song) ->
                     ListItem(
                         modifier = if (song != null) Modifier.clickable { onOpenSong(song.hash) } else Modifier,
+                        // 已安裝的歌顯示封面；沒安裝的歌讀不到封面，留一個灰色方塊對齊
+                        leadingContent = { if (song != null) SongCover(song) else MissingCover() },
                         headlineContent = {
                             Text(
                                 song?.title ?: entry.songName ?: "（沒有歌名）",

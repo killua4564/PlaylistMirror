@@ -22,6 +22,8 @@ data class ParsedInfo(
     val difficulties: List<Difficulty>,
     val filesToHash: List<String>,
     val durationSeconds: Int?,
+    /** 封面圖的檔名（在歌曲資料夾裡），說明書沒寫就是 null。 */
+    val coverFilename: String? = null,
 )
 
 /**
@@ -58,6 +60,7 @@ object SongInfoParser {
             filesToHash = beatmaps.mapNotNull { it.str("_beatmapFilename") },
             // 舊格式說明書裡沒有時間長度，畫面顯示「—」
             durationSeconds = null,
+            coverFilename = root.str("_coverImageFilename").blankToNull(),
         )
     }
 
@@ -92,6 +95,8 @@ object SongInfoParser {
             difficulties = beatmaps.mapNotNull { Difficulty.parse(it.str("difficulty")) }.distinct().sorted(),
             filesToHash = files,
             durationSeconds = (audio?.get("songDuration") as? JsonPrimitive)?.doubleOrNull?.roundToInt(),
+            // 新格式的封面檔名放在最外層
+            coverFilename = root.str("coverImageFilename").blankToNull(),
         )
     }
 }

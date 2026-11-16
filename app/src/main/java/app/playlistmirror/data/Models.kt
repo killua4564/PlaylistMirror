@@ -44,6 +44,8 @@ data class Song(
     val downloadedAt: Long,
     /** BeatSaver 上的短 ID（例如 "3b2c"），從資料夾名稱推測，可能沒有。 */
     val key: String?,
+    /** 封面圖檔；說明書沒寫或檔案不存在就是 null，畫面顯示預設圖示。 */
+    val coverFile: File? = null,
 )
 
 /**
@@ -75,6 +77,12 @@ data class Playlist(
 
     /** 對應的 BeatSaver 歌單 ID，從 customData.syncURL 取得；沒有就是 null（不參與同步）。 */
     val cloudId: String? = PlaylistLink.idFromSyncUrl((raw["customData"] as? JsonObject)?.str("syncURL"))
+
+    /**
+     * 歌單封面：歌單檔的 image 欄位，是把圖片轉成文字（Base64）存起來的。
+     * 有些檔案會在前面加「data:image/png;base64,」，這裡把它去掉，只留圖片內容。
+     */
+    val imageBase64: String? = raw.str("image")?.substringAfter("base64,")?.takeIf { it.isNotBlank() }
 }
 
 /** 讀取失敗的檔案，以及失敗原因。畫面上會提示，讓使用者知道有東西沒讀到。 */

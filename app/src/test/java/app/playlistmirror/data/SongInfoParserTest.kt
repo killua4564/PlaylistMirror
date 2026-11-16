@@ -5,7 +5,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * 歌曲說明書（Info.dat）的解讀。對應測項 T1-01、T1-03。
+ * 歌曲說明書（Info.dat）的解讀。對應測項 T1-01、T1-03、T1-23。
  */
 class SongInfoParserTest {
 
@@ -85,5 +85,14 @@ class SongInfoParserTest {
     @Test(expected = Exception::class)
     fun `T1-02 壞掉的 JSON 要回報錯誤`() {
         SongInfoParser.parse("{ 這不是 JSON")
+    }
+
+    @Test
+    fun `T1-23 讀出封面圖的檔名（舊格式與新格式），沒寫就是 null`() {
+        val v2 = SongInfoParser.parse("""{"_songName":"A","_coverImageFilename":"cover.jpg","_difficultyBeatmapSets":[]}""")
+        assertEquals("cover.jpg", v2.coverFilename)
+        val v4 = SongInfoParser.parse("""{"version":"4.0.0","song":{"title":"B"},"coverImageFilename":"art.png","difficultyBeatmaps":[]}""")
+        assertEquals("art.png", v4.coverFilename)
+        assertNull(SongInfoParser.parse("""{"_songName":"C","_coverImageFilename":"  "}""").coverFilename)
     }
 }

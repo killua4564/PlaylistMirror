@@ -148,6 +148,7 @@ fun SongListScreen(
 private fun SongRow(song: Song, onClick: () -> Unit) {
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
+        leadingContent = { SongCover(song) },
         headlineContent = {
             Text(song.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
         },

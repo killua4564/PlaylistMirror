@@ -130,6 +130,7 @@ class LibraryRepository(
             durationSeconds = duration,
             downloadedAt = folder.lastModified(),
             key = keyFromFolderName(folder.name),
+            coverFile = info.coverFilename?.let { File(folder, it) }?.takeIf { it.isFile },
         )
     }
 

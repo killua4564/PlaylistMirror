@@ -15,7 +15,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 歌單檔的讀寫。對應測項 T1-04、T1-17、T1-19、T1-20。
+ * 歌單檔的讀寫。對應測項 T1-04、T1-17、T1-19、T1-20、T1-24。
  */
 class PlaylistStoreTest {
 
@@ -111,4 +111,14 @@ class PlaylistStoreTest {
 
     @Suppress("unused")
     private fun JsonObject.str(key: String) = this[key]?.jsonPrimitive?.content
+
+    @Test
+    fun `T1-24 讀出歌單封面的圖片文字，去掉 data 開頭；沒有封面就是 null`() {
+        File(game.playlistsDir, "plain.bplist").writeText("""{"playlistTitle":"P","image":"/9j/AAAA","songs":[]}""")
+        assertEquals("/9j/AAAA", store.parse(File(game.playlistsDir, "plain.bplist")).imageBase64)
+        File(game.playlistsDir, "uri.bplist").writeText("""{"playlistTitle":"U","image":"data:image/png;base64,iVBOR","songs":[]}""")
+        assertEquals("iVBOR", store.parse(File(game.playlistsDir, "uri.bplist")).imageBase64)
+        File(game.playlistsDir, "none.bplist").writeText("""{"playlistTitle":"N","songs":[]}""")
+        assertNull(store.parse(File(game.playlistsDir, "none.bplist")).imageBase64)
+    }
 }
