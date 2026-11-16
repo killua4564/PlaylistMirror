@@ -6,8 +6,10 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -97,6 +99,36 @@ class BeatSaverClient(
         return result
     }
 
+    /** 有沒有登入（有通行證才能寫回、讀私人歌單）。 */
+    val canWrite: Boolean get() = accessToken != null
+
+    /**
+     * 寫回：把歌加進（add = true）或移出（add = false）BeatSaver 上的歌單。需要登入。
+     * BeatSaver 一次最多 100 首，這裡自動分批。
+     */
+    fun batch(playlistId: String, keys: List<String>, hashes: List<String>, add: Boolean) {
+        check(accessToken != null) { "需要先登入 BeatSaver" }
+        val all = keys.map { "k" to it } + hashes.map { "h" to it }
+        for (chunk in all.chunked(100)) {
+            val body = batchBody(chunk.filter { it.first == "k" }.map { it.second }, chunk.filter { it.first == "h" }.map { it.second }, add)
+            val connection = open("$apiBase/playlists/id/$playlistId/batch").apply {
+                requestMethod = "POST"
+                doOutput = true
+                setRequestProperty("Content-Type", "application/json")
+            }
+            try {
+                connection.outputStream.use { it.write(body.toByteArray()) }
+                val status = connection.responseCode
+                if (status != 200) {
+                    val detail = connection.errorStream?.use { it.readBytes().decodeToString() }.orEmpty().take(200)
+                    throw IOException("寫回 BeatSaver 失敗（HTTP $status）$detail")
+                }
+            } finally {
+                connection.disconnect()
+            }
+        }
+    }
+
     /** 下載檔案（例如歌曲的 zip 壓縮檔）。 */
     fun download(url: String): ByteArray {
         val connection = open(url)
@@ -158,4 +190,18 @@ class BeatSaverClient(
         }
 
     private fun JsonObject.str(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
+
+    companion object {
+        /**
+         * 寫回時送給 BeatSaver 的內容。
+         * 優先用短 ID（keys）：作者更新後舊指紋可能對不上，短 ID 不會變。
+         * ignoreUnknown：BeatSaver 上找不到的歌就略過，不要整批失敗。
+         */
+        fun batchBody(keys: List<String>, hashes: List<String>, add: Boolean): String = buildJsonObject {
+            put("keys", JsonArray(keys.map { JsonPrimitive(it.lowercase()) }))
+            put("hashes", JsonArray(hashes.map { JsonPrimitive(it.lowercase()) }))
+            put("inPlaylist", add)
+            put("ignoreUnknown", true)
+        }.toString()
+    }
 }

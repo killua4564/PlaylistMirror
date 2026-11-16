@@ -84,6 +84,7 @@ fun AppRoot(viewModel: LibraryViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val syncState by viewModel.sync.collectAsStateWithLifecycle()
+    val authState by viewModel.auth.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(message) {
         message?.let {
@@ -141,8 +142,8 @@ fun AppRoot(viewModel: LibraryViewModel) {
             composable(Tab.Sync.route) {
                 SyncScreen(
                     state = syncState,
-                    // 階段 3 拿到 BeatSaver 授權、登入後才會變成 true
-                    canWriteBeatSaver = false,
+                    // 登入 BeatSaver 後才能寫回
+                    canWriteBeatSaver = authState is AuthUiState.LoggedIn,
                     onStart = viewModel::startSync,
                     onConfirm = viewModel::confirmSync,
                     onCancel = viewModel::cancelSync,
@@ -170,10 +171,14 @@ fun AppRoot(viewModel: LibraryViewModel) {
             composable("settings") {
                 SettingsScreen(
                     state = state,
+                    auth = authState,
                     gameRootPath = viewModel.gameRootPath,
                     permissionGranted = granted,
                     onRequestPermission = requestPermission,
                     onReload = viewModel::reload,
+                    onLogin = viewModel::startLogin,
+                    onCancelLogin = viewModel::cancelLogin,
+                    onLogout = viewModel::logout,
                     onBack = { nav.popBackStack() },
                 )
             }

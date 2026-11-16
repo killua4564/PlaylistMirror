@@ -16,6 +16,8 @@ class SyncService(
     private val gameRoot: File,
     private val recordStore: SyncRecordStore,
     private val clientFactory: () -> BeatSaverClient,
+    /** 登入後已知的使用者 ID；用來列出你所有的歌單（包括私人的） */
+    private val currentUserId: () -> String? = { null },
 ) {
 
     /** 摘要的內容：要做的事、讀到的 BeatSaver 歌單、以及讀不到的歌單。 */
@@ -53,8 +55,10 @@ class SyncService(
             }
         }
 
-        // 找出 BeatSaver 上新建、Quest 還沒有的歌單：先從已讀到的歌單找出擁有者，再列出他的歌單
-        val ownerId = cloud.keys.firstNotNullOfOrNull { runCatching { client.fetchOwnerId(it) }.getOrNull() }
+        // 找出 BeatSaver 上新建、Quest 還沒有的歌單：登入時用自己的帳號；
+        // 沒登入時，從已讀到的歌單找出擁有者，再列出他的公開歌單
+        val ownerId = currentUserId()
+            ?: cloud.keys.firstNotNullOfOrNull { runCatching { client.fetchOwnerId(it) }.getOrNull() }
         if (ownerId != null) {
             val known = linked.mapNotNull { it.cloudId }.toSet()
             val others = runCatching { client.fetchUserPlaylistIds(ownerId) }.getOrDefault(emptyList())

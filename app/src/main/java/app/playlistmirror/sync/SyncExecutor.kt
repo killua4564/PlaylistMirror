@@ -99,8 +99,26 @@ class SyncExecutor(
                 }
                 if (warning != null) return ItemResult(item, ItemResult.Status.Done, warning)
             }
-            SyncKind.AddToBeatSaver, SyncKind.RemoveFromBeatSaver ->
-                return ItemResult(item, ItemResult.Status.Skipped, "需要 BeatSaver 授權，取得後才會寫回")
+            SyncKind.AddToBeatSaver, SyncKind.RemoveFromBeatSaver -> {
+                if (!client.canWrite) {
+                    return ItemResult(item, ItemResult.Status.Skipped, "需要登入 BeatSaver 才能寫回")
+                }
+                val add = item.kind == SyncKind.AddToBeatSaver
+                // 優先用短 ID；沒有短 ID 才用指紋
+                client.batch(
+                    playlistId = item.playlistId,
+                    keys = listOfNotNull(item.key),
+                    hashes = if (item.key == null) listOfNotNull(item.hash) else emptyList(),
+                    add = add,
+                )
+                if (!add) {
+                    // 你在遊戲裡刪掉的歌，Quest 歌單可能還留著找不到的紀錄，一併清掉
+                    val playlist = store.loadAll().first.firstOrNull { it.cloudId == item.playlistId }
+                    if (playlist != null && playlist.entries.any { matches(it, item.key, item.hash) }) {
+                        store.save(playlist, playlist.entries.filterNot { matches(it, item.key, item.hash) })
+                    }
+                }
+            }
         }
         return ItemResult(item, ItemResult.Status.Done)
     }

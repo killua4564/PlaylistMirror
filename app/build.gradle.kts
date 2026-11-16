@@ -1,9 +1,20 @@
 // App 本身的組裝設定：名稱、支援的 Android 版本、用到的函式庫。
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// 從專案根目錄的 secrets.properties 讀取 BeatSaver 的 OAuth 憑證。
+// 這個檔案不會提交到 Git；檔案不存在、或還是範本文字時，值就是空的，App 仍可建置，只是登入功能停用。
+val secrets = Properties().apply {
+    val file = rootProject.file("secrets.properties")
+    if (file.isFile) file.inputStream().use { load(it) }
+}
+fun secret(name: String): String =
+    secrets.getProperty(name).orEmpty().trim().takeIf { value -> value.all { it.code in 33..126 } }.orEmpty()
 
 android {
     namespace = "app.playlistmirror"
@@ -16,6 +27,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+
+        buildConfigField("String", "BEATSAVER_CLIENT_ID", "\"${secret("BEATSAVER_CLIENT_ID")}\"")
+        buildConfigField("String", "BEATSAVER_CLIENT_SECRET", "\"${secret("BEATSAVER_CLIENT_SECRET")}\"")
     }
 
     buildTypes {

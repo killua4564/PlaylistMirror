@@ -27,11 +27,13 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.playlistmirror.sync.ItemResult
@@ -68,7 +70,7 @@ fun SyncScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             when (state) {
-                is SyncUiState.Idle -> IdleView(state, onStart)
+                is SyncUiState.Idle -> IdleView(state, canWriteBeatSaver, onStart, onOpenSettings)
                 SyncUiState.Checking -> CenterMessage("正在讀取 BeatSaver 與 Quest 上的歌單…", progress = true)
                 is SyncUiState.Review -> ReviewView(state.preview, canWriteBeatSaver, onConfirm, onCancel)
                 is SyncUiState.Running -> RunningView(state)
@@ -81,12 +83,27 @@ fun SyncScreen(
 // ───────────── 待命 ─────────────
 
 @Composable
-private fun IdleView(state: SyncUiState.Idle, onStart: () -> Unit) {
+private fun IdleView(state: SyncUiState.Idle, loggedIn: Boolean, onStart: () -> Unit, onOpenSettings: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text(
             "上次同步：" + (state.lastSyncedAt?.let { formatDateTime(it) } ?: "尚未同步"),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (!loggedIn) {
+            // 沒登入時提醒：只能讀公開歌單，變更也寫不回 BeatSaver
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable(onClick = onOpenSettings),
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    Text("尚未登入 BeatSaver", color = MaterialTheme.colorScheme.secondary)
+                    Text(
+                        "只能同步公開歌單，變更也無法寫回。點這裡到設定登入。",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(16.dp))
         Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.Sync, contentDescription = null)
@@ -168,18 +185,36 @@ private fun ReviewView(
                 val sideItems = indexed.filter { it.value.side == side }
                 if (sideItems.isEmpty()) continue
                 item {
+                    // 區塊標題旁的勾選框：一次勾選或取消「Quest 會變成」（或「BeatSaver 會變成」）底下的所有項目
+                    val sideIndexes = sideItems.map { it.index }
+                    val sideSelected = sideIndexes.count { checked[it] == true }
                     SectionHeader(
                         if (side == Side.Quest) "Quest 會變成" else "BeatSaver 會變成",
                         note = if (side == Side.BeatSaver && !canWriteBeatSaver) "需要 BeatSaver 授權後才能寫回；這些變更會保留到下次" else null,
+                        state = toggleState(sideSelected, sideIndexes.size),
+                        enabled = side == Side.Quest || canWriteBeatSaver,
+                        onToggle = {
+                            val target = sideSelected != sideIndexes.size
+                            sideIndexes.forEach { checked[it] = target }
+                        },
                     )
                 }
                 for ((title, group) in sideItems.groupBy { it.value.playlistTitle }) {
                     item {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                        // 歌單標題旁的勾選框：一次勾選或取消這個歌單的所有項目
+                        val enabled = side == Side.Quest || canWriteBeatSaver
+                        val indexes = group.map { it.index }
+                        val selectedCount = indexes.count { checked[it] == true }
+                        GroupHeader(
+                            title = title,
+                            count = indexes.size,
+                            state = toggleState(selectedCount, indexes.size),
+                            enabled = enabled,
+                            onToggle = {
+                                // 全勾時按下 → 全部取消；其他情況（沒勾、部分勾）按下 → 全部勾選
+                                val target = selectedCount != indexes.size
+                                indexes.forEach { checked[it] = target }
+                            },
                         )
                     }
                     items(group, key = { it.index }) { (index, item) ->
@@ -232,11 +267,49 @@ private fun Warnings(preview: SyncService.Preview) {
     }
 }
 
+/** 勾了幾項 → 勾選框該長什麼樣：全勾、全不勾、或部分勾（一條橫線）。 */
+private fun toggleState(selected: Int, total: Int) = when (selected) {
+    0 -> ToggleableState.Off
+    total -> ToggleableState.On
+    else -> ToggleableState.Indeterminate
+}
+
+/** 「Quest 會變成」「BeatSaver 會變成」的區塊標題，左邊有三態勾選框控制整個區塊。 */
 @Composable
-private fun SectionHeader(text: String, note: String?) {
-    Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp)) {
-        Text(text, style = MaterialTheme.typography.titleMedium)
-        note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+private fun SectionHeader(text: String, note: String?, state: ToggleableState, enabled: Boolean, onToggle: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onToggle)
+            .padding(start = 8.dp, end = 16.dp, top = 20.dp),
+    ) {
+        TriStateCheckbox(state = state, onClick = onToggle, enabled = enabled)
+        Column(Modifier.weight(1f)) {
+            Text(text, style = MaterialTheme.typography.titleMedium)
+            note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
+}
+
+/** 歌單標題列：三態勾選框（全勾、全不勾、部分勾）＋歌單名稱與項目數。 */
+@Composable
+private fun GroupHeader(title: String, count: Int, state: ToggleableState, enabled: Boolean, onToggle: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onToggle)
+            .padding(start = 8.dp, end = 16.dp, top = 8.dp),
+    ) {
+        TriStateCheckbox(state = state, onClick = onToggle, enabled = enabled)
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        Text("$count 項", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
