@@ -33,7 +33,7 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@17
 
 - 遊戲資料在 `/sdcard/ModData/com.beatgames.beatsaber`；歌曲在 `Mods/SongCore`（也讀 `Mods/SongLoader`），歌單在 `Mods/PlaylistManager/Playlists`。
 - 歌曲指紋依 BeatSaver 的算法（舊格式已用真實資料驗證；新格式 v4 尚待真實歌曲驗證）。
-- 寫歌單檔時只改 `songs` 欄位，其他欄位（封面、說明、其他模組資料）原封不動。
+- 寫歌單檔時只改 `songs` 欄位，其他欄位（封面、說明、其他模組資料）原封不動；唯一例外是同步「BeatSaver 上改的歌單名稱」，只換 `playlistTitle`（方向固定 BeatSaver → Quest）。**封面不同步**：BeatSaver 網站換不了封面，且遊戲載入時會把封面重存成 PNG，和 BeatSaver 給的 JPG 文字永遠不一樣，比對會誤判。
 - 歌單只在 BeatSaver 網站建立或刪除，App 不提供新增、刪除歌單，只負責鏡像：BeatSaver 上刪掉的歌單，同步時列為「刪除 Quest 歌單」（只刪歌單檔，歌曲保留）。
 - Quest 上的歌單一律用 `.bplist`；封面欄位 `.bplist` 用 `image`、舊的 `.json` 用 `imageString`，兩種都要能讀。
 - Quest 歌單與 BeatSaver 歌單的對應：用歌單檔 `customData.syncURL` 裡的歌單 ID 判斷，不做手動連結或依名稱比對。

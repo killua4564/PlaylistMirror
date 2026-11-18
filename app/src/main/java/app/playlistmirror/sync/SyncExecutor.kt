@@ -55,7 +55,8 @@ class SyncExecutor(
     }
 
     private val order = listOf(
-        SyncKind.CreateQuestPlaylist, SyncKind.DeleteQuestPlaylist, SyncKind.RemoveFromQuestPlaylist,
+        SyncKind.CreateQuestPlaylist, SyncKind.DeleteQuestPlaylist,
+        SyncKind.RenameQuestPlaylist, SyncKind.RemoveFromQuestPlaylist,
         SyncKind.AddToQuestPlaylist, SyncKind.Download, SyncKind.Update,
         SyncKind.AddToBeatSaver, SyncKind.RemoveFromBeatSaver,
     )
@@ -69,6 +70,10 @@ class SyncExecutor(
             SyncKind.DeleteQuestPlaylist -> {
                 // 只刪歌單檔；歌單裡的歌不刪，因為其他歌單可能也有這些歌
                 store.delete(playlistFor(item.playlistId))
+            }
+            SyncKind.RenameQuestPlaylist -> {
+                // 只改歌單裡的名稱欄位；檔名維持原樣（遊戲認的是裡面的名稱，不是檔名）
+                store.replaceFields(playlistFor(item.playlistId), mapOf("playlistTitle" to JsonPrimitive(item.playlistTitle)))
             }
             SyncKind.RemoveFromQuestPlaylist -> {
                 val playlist = playlistFor(item.playlistId)
@@ -226,6 +231,7 @@ class SyncExecutor(
                 SyncKind.Update -> "更新「$song」到新版"
                 SyncKind.CreateQuestPlaylist -> "建立歌單「${item.playlistTitle}」"
                 SyncKind.DeleteQuestPlaylist -> "刪除歌單「${item.playlistTitle}」（BeatSaver 上已刪除；歌曲檔案保留）"
+                SyncKind.RenameQuestPlaylist -> "把歌單「${item.oldTitle}」改名為「${item.playlistTitle}」"
                 SyncKind.AddToBeatSaver -> "把「$song」加到 BeatSaver"
                 SyncKind.RemoveFromBeatSaver -> "把「$song」從 BeatSaver 移除"
             }

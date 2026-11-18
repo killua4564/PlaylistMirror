@@ -3,6 +3,8 @@ package app.playlistmirror.sync
 import app.playlistmirror.data.Playlist
 import app.playlistmirror.data.PlaylistEntry
 import app.playlistmirror.data.Song
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 /**
  * 同步的「大腦」：比對 Quest、BeatSaver、上次同步記錄三方，算出要做哪些事。
@@ -54,6 +56,7 @@ object SyncPlanner {
                     needsDecision = record.playlists[id] == null,
                 )
             } else {
+                items += infoItems(playlist, cloudPlaylist)
                 items += diffPlaylist(playlist, cloudPlaylist, record.playlists[id], lookup)
             }
         }
@@ -135,6 +138,20 @@ object SyncPlanner {
             }
         }
         return items
+    }
+
+    /**
+     * 歌單名稱：以 BeatSaver 為準（遊戲和 App 都不能改名，不會有方向的疑問）。
+     * 保守處理：BeatSaver 上沒有名稱時，不去動 Quest 上原有的名稱。
+     *
+     * 封面刻意不同步：BeatSaver 網站換不了封面，而且遊戲（歌單模組）載入時會把封面重新存成 PNG，
+     * 和 BeatSaver 給的 JPG 文字永遠不一樣，比對一定誤判成「每個歌單都要換封面」。
+     */
+    private fun infoItems(playlist: Playlist, cloud: CloudPlaylist): List<SyncItem> {
+        val cloudTitle = (cloud.raw["playlistTitle"] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }
+        if (cloudTitle == null || cloudTitle == playlist.title.trim()) return emptyList()
+        // 比較時忽略前後空白；顯示與寫入用 BeatSaver 原本的名稱（和同歌單的其他項目一致，摘要才會分在同一組）
+        return listOf(SyncItem(SyncKind.RenameQuestPlaylist, cloud.id, cloud.title, oldTitle = playlist.title))
     }
 
     private fun songItem(kind: SyncKind, playlist: CloudPlaylist, song: CloudSong) = SyncItem(

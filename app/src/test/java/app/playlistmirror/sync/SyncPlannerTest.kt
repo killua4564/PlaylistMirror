@@ -43,6 +43,22 @@ class SyncPlannerTest {
     private fun cloudPlaylist(vararg songs: Pair<String, String>, id: String = pid) =
         CloudPlaylist(id, "Cloud $id", songs.map { (key, hash) -> CloudSong(key, hash, "Song $key") }, JsonObject(emptyMap()))
 
+    /** BeatSaver 歌單，指定名稱與封面（封面可為 null＝網站上沒設定）。 */
+    private fun cloudWithInfo(title: String, image: String?, id: String = pid) = CloudPlaylist(
+        id, title, emptyList(),
+        buildJsonObject { put("playlistTitle", title); image?.let { put("image", it) } },
+    )
+
+    /** Quest 歌單，指定名稱與封面。 */
+    private fun questWithInfo(title: String, image: String?) = Playlist(
+        file = File("q.bplist"), title = title, entries = emptyList(),
+        raw = buildJsonObject {
+            put("playlistTitle", title)
+            image?.let { put("image", it) }
+            put("customData", buildJsonObject { put("syncURL", PlaylistLink.syncUrlFor(pid)) })
+        },
+    )
+
     private fun record(vararg songs: Triple<String, String, Boolean>, id: String = pid) = SyncRecord(
         mapOf(id to PlaylistRecord(id, songs.associate { (key, hash, installed) ->
             "key:$key" to SongRecord("key:$key", key, hash, installed)
@@ -224,6 +240,55 @@ class SyncPlannerTest {
         )
         assertEquals(listOf(SyncKind.DeleteQuestPlaylist to null), items.kinds())
         assertEquals(true, items.single().needsDecision)
+    }
+
+    @Test
+    fun `T2-32 BeatSaver 上改了歌單名稱：Quest 歌單跟著改名`() {
+        val items = plan(listOf(questWithInfo("hololive", null)), mapOf(pid to cloudWithInfo("Gawr Gura", null)), emptyList(), SyncRecord())
+        val rename = items.single()
+        assertEquals(SyncKind.RenameQuestPlaylist, rename.kind)
+        assertEquals("hololive", rename.oldTitle)
+        assertEquals("Gawr Gura", rename.playlistTitle)
+        assertEquals(false, rename.needsDecision)
+    }
+
+    @Test
+    fun `T2-34 名稱沒變：不需要做任何事`() {
+        val items = plan(listOf(questWithInfo("A", "X")), mapOf(pid to cloudWithInfo("A", "X")), emptyList(), SyncRecord())
+        assertTrue(items.isEmpty())
+    }
+
+    @Test
+    fun `T2-32 Quest 歌單檔沒有名稱欄位時，用檔名比對；名稱不同才改名`() {
+        fun questNoTitle() = Playlist(
+            file = File("q.bplist"), title = "q", entries = emptyList(),
+            raw = buildJsonObject { put("customData", buildJsonObject { put("syncURL", PlaylistLink.syncUrlFor(pid)) }) },
+        )
+        assertTrue(plan(listOf(questNoTitle()), mapOf(pid to cloudWithInfo("q", null)), emptyList()).isEmpty())
+        val rename = plan(listOf(questNoTitle()), mapOf(pid to cloudWithInfo("New", null)), emptyList()).single()
+        assertEquals(SyncKind.RenameQuestPlaylist, rename.kind)
+        assertEquals("q", rename.oldTitle)
+    }
+
+    @Test
+    fun `T2-32 名稱只差在前後空白不算改名；改名項目與歌曲項目用同一個歌單名稱，摘要才會分在同一組`() {
+        fun cloud(title: String) = CloudPlaylist(
+            pid, title, listOf(CloudSong("a", "h-a", "Song a")),
+            buildJsonObject { put("playlistTitle", title) },
+        )
+        // 只差空白：只有歌曲項目，沒有改名
+        val same = plan(listOf(questWithInfo("New", null)), mapOf(pid to cloud("New ")), emptyList())
+        assertTrue(same.none { it.kind == SyncKind.RenameQuestPlaylist })
+        // 真的改名：所有項目的歌單名稱一致
+        val renamed = plan(listOf(questWithInfo("Old", null)), mapOf(pid to cloud("New ")), emptyList())
+        assertTrue(renamed.any { it.kind == SyncKind.RenameQuestPlaylist })
+        assertEquals(setOf("New "), renamed.map { it.playlistTitle }.toSet())
+    }
+
+    @Test
+    fun `T2-33 封面不同步：兩邊封面不一樣（遊戲會把封面重存成 PNG）也不產生任何項目`() {
+        val items = plan(listOf(questWithInfo("A", "PNG-REENCODED")), mapOf(pid to cloudWithInfo("A", "JPG-ORIGINAL")), emptyList(), SyncRecord())
+        assertTrue(items.isEmpty())
     }
 
     @Test

@@ -65,6 +65,9 @@ enum class SyncKind(val side: Side) {
     /** BeatSaver 上刪掉的歌單：Quest 上也刪除這個歌單檔（歌曲檔案保留，其他歌單可能還用得到） */
     DeleteQuestPlaylist(Side.Quest),
 
+    /** BeatSaver 上改了歌單名稱：Quest 歌單跟著改名（遊戲和 App 都不能改名，所以方向固定是 BeatSaver → Quest） */
+    RenameQuestPlaylist(Side.Quest),
+
     /** 你在 Quest 新加的歌：加到 BeatSaver 歌單 */
     AddToBeatSaver(Side.BeatSaver),
 
@@ -88,6 +91,8 @@ data class SyncItem(
     val hash: String? = null,
     val oldHash: String? = null,
     val songName: String? = null,
+    /** 只有 RenameQuestPlaylist 會用到：Quest 上原本的歌單名稱 */
+    val oldTitle: String? = null,
     val needsDecision: Boolean = false,
 ) {
     val side: Side get() = kind.side

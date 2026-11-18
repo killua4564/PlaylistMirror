@@ -89,6 +89,32 @@ class PlaylistStoreTest {
     }
 
     @Test
+    fun `T2-35 改名只換指定欄位，歌曲與其他欄位原封不動、順序不變`() {
+        val file = File(game.playlistsDir, "p.bplist")
+        file.writeText("""{"playlistTitle":"old","playlistAuthor":"me","image":"OLD","customData":{"syncURL":"https://x/1"},"songs":[{"hash":"aa","extra":1}]}""")
+        val playlist = store.parse(file)
+        val updated = store.replaceFields(playlist, mapOf("playlistTitle" to JsonPrimitive("new"), "image" to JsonPrimitive("NEW")))
+        assertEquals("new", updated.title)
+        assertEquals("NEW", updated.imageBase64)
+        val written = Json.parseToJsonElement(file.readText()).jsonObject
+        assertEquals(listOf("playlistTitle", "playlistAuthor", "image", "customData", "songs"), written.keys.toList())
+        assertEquals("me", written["playlistAuthor"]!!.jsonPrimitive.content)
+        assertEquals(1, written["songs"]!!.jsonArray[0].jsonObject["extra"]!!.jsonPrimitive.content.toInt())
+    }
+
+    @Test
+    fun `T2-35 歌單檔沒有名稱欄位（用檔名代替）時改名：補上名稱欄位，檔名不變`() {
+        val file = File(game.playlistsDir, "untitled.bplist")
+        file.writeText("""{"songs":[{"hash":"aa"}]}""")
+        val playlist = store.parse(file)
+        assertEquals("untitled", playlist.title)
+        val updated = store.replaceFields(playlist, mapOf("playlistTitle" to JsonPrimitive("New")))
+        assertEquals("New", updated.title)
+        assertEquals("untitled.bplist", updated.file.name)
+        assertEquals(1, updated.entries.size)
+    }
+
+    @Test
     fun `T1-20 寫檔失敗時，原本的歌單檔完整保留`() {
         val file = game.addPlaylist("a.bplist", "A", listOf("aaa" to "Song"))
         val before = file.readText()

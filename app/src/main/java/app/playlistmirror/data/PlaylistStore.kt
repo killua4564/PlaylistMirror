@@ -74,6 +74,19 @@ class PlaylistStore(private val folder: File) {
     }
 
     /**
+     * 只換掉指定的欄位（例如名稱、封面），其他欄位與歌曲清單原封不動。
+     * 已有的欄位在原位置替換、順序不變；沒有的欄位加在最後。
+     */
+    fun replaceFields(playlist: Playlist, changes: Map<String, JsonElement>): Playlist {
+        val newRaw = buildJsonObject {
+            for ((key, value) in playlist.raw) put(key, changes[key] ?: value)
+            for ((key, value) in changes) if (key !in playlist.raw) put(key, value)
+        }
+        writeSafely(playlist.file, json.encodeToString(JsonElement.serializer(), newRaw))
+        return parse(playlist.file)
+    }
+
+    /**
      * 用 BeatSaver 下載的歌單內容，在 Quest 建立一個新的歌單檔（同步時「BeatSaver 上新建的歌單」用）。
      * 檔名用歌單名稱，遇到同名就加上編號。內容原封不動寫入，包含封面和 syncURL。
      */
